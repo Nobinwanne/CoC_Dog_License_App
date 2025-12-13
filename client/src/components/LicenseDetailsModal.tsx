@@ -9,7 +9,7 @@ const LicenseDetailsModal = ({
 }) => {
   if (!isOpen || !license) return null;
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: any) => {
     switch (status) {
       case 'Active':
         return 'bg-green-100 text-green-800';
@@ -22,7 +22,7 @@ const LicenseDetailsModal = ({
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | number | Date) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -135,6 +135,10 @@ const LicenseDetailsModal = ({
                 <DetailField
                   label="Spayed/Neutered"
                   value={license.IsSpayedNeutered ? 'Yes' : 'No'}
+                />
+                 <DetailField
+                  label="Spayed/Neutered"
+                  value={license.IsNuisance ? 'Yes' : 'No'}
                 />
               </div>
               {license.TagNumber && (

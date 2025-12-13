@@ -45,7 +45,7 @@ router.get('/:id/dogs', async (req, res) => {
           d.DateOfBirth,
           d.Gender,
           d.IsSpayedNeutered,
-          d.MicrochipNumber
+          d.IsNuisance
         FROM Owners o
         LEFT JOIN Dogs d ON o.OwnerID = d.OwnerID
         WHERE o.OwnerID = @id
@@ -115,11 +115,12 @@ router.post('/', async (req, res) => {
       firstName,
       lastName,
       email,
-      phone,
+      phone1,
+      phone2,
       address,
       city,
-      state,
-      zipCode
+      province,
+      postalCode
     } = req.body;
 
     // Validate required fields
@@ -147,8 +148,8 @@ router.post('/', async (req, res) => {
       .input('phone', sql.NVarChar, phone || null)
       .input('address', sql.NVarChar, address || null)
       .input('city', sql.NVarChar, city || null)
-      .input('state', sql.NVarChar, state || null)
-      .input('zipCode', sql.NVarChar, zipCode || null)
+      .input('province', sql.NVarChar, province || null)
+      .input('postalCode', sql.NVarChar, postalCode || null)
       .query(`
         INSERT INTO Owners 
         (FirstName, LastName, Email, Phone, Address, City, State, ZipCode)

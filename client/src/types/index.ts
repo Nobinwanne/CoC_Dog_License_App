@@ -15,6 +15,7 @@ export interface License {
   DateOfBirth?: string;
   Gender?: string;
   IsSpayedNeutered?: boolean;
+  IsNuisance?: boolean;
   TagNumber?: string;
   FirstName: string;
   LastName: string;
@@ -22,16 +23,13 @@ export interface License {
   Phone: string;
   Address?: string;
   City?: string;
-  State?: string;
-  ZipCode?: string;
+  Province?: string;
+  PostalCode?: string;
   IssueDate: string;
   ExpirationDate: string;
   LicenseType?: string;
   Status: string;
   Fee: number;
-  RabiesVaccinationDate?: string;
-  RabiesVaccinationExpiration?: string;
-  VeterinarianName?: string;
 }
 
 export interface LicenseDetailsModalProps {
@@ -45,4 +43,33 @@ export interface PaymentFormProps {
   onClose: () => void;
   license?: License | null;
   onPaymentSuccess?: () => void;
+}
+
+export interface Owner {
+  OwnerID: number;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Phone1: string;
+  Phone2: string;
+  Address: string;
+  City: string;
+  Province: string;
+  PostalCode: string;
+}
+
+export interface Dog {
+  DogID: number;
+  DogName: string;
+  Roll: number;
+  Breed: string;
+  Color: string;
+  DateOfBirth: string;
+  Gender: string;
+  IsSpayedNeutered: boolean;
+  IsNuisance: boolean;
+  OwnerFirstName: string;
+  OwnerLastName: string;
+  OwnerEmail: string;
+  OwnerPhone: string;
 }
