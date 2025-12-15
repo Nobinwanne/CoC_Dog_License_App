@@ -1,16 +1,9 @@
-export interface Dog {
-    DogName: string;
-    Breed: string;
-    Color: string;
-    Gender: string;
-}
-
-
 export interface License {
   LicenseID: number;
   LicenseNumber: string;
   DogName: string;
   Breed: string;
+   Roll: string | number | Date | undefined;
   Color?: string;
   DateOfBirth?: string;
   Gender?: string;
@@ -26,7 +19,6 @@ export interface License {
   Province?: string;
   PostalCode?: string;
   IssueDate: string;
-  ExpirationDate: string;
   LicenseType?: string;
   Status: string;
   Fee: number;
@@ -38,11 +30,22 @@ export interface LicenseDetailsModalProps {
   license: License | null;
 }
 
+export interface DogDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  dog: License | null;
+}
+
 export interface PaymentFormProps {
   isOpen: boolean;
   onClose: () => void;
   license?: License | null;
   onPaymentSuccess?: () => void;
+}
+
+export interface DetailFieldProps {
+  label: string;
+  value?: string | number | Date;
 }
 
 export interface Owner {

@@ -1,12 +1,12 @@
 import React from 'react';
-import {License, LicenseDetailsModalProps } from '../types'
+import {DetailFieldProps, LicenseDetailsModalProps } from '../types'
 
 
 const LicenseDetailsModal = ({ 
   isOpen, 
   onClose, 
   license 
-}) => {
+}: LicenseDetailsModalProps) => {
   if (!isOpen || !license) return null;
 
   const getStatusColor = (status: any) => {
@@ -34,12 +34,14 @@ const LicenseDetailsModal = ({
   const DetailField = ({ 
     label, 
     value 
-  }) => (
+  }: DetailFieldProps) => (
     <div className="p-3 bg-gray-50 rounded-lg">
       <label className="block text-xs font-medium text-gray-500 uppercase">
         {label}
       </label>
-      <p className="mt-1 text-sm font-semibold text-gray-900">{value || 'N/A'}</p>
+      <p className="mt-1 text-sm font-semibold text-gray-900"> {value instanceof Date
+    ? value.toLocaleDateString()
+    : value ?? 'N/A'}</p>
     </div>
   );
 
@@ -108,10 +110,7 @@ const LicenseDetailsModal = ({
                   label="Issue Date"
                   value={formatDate(license.IssueDate)}
                 />
-                <DetailField
-                  label="Expiration Date"
-                  value={formatDate(license.ExpirationDate)}
-                />
+              
                 <DetailField label="Fee" value={`$${license.Fee?.toFixed(2)}`} />
               </div>
             </div>
@@ -129,26 +128,20 @@ const LicenseDetailsModal = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 <DetailField
                   label="Date of Birth"
-                  value={formatDate(license.DateOfBirth)}
+                  value={formatDate(license.DateOfBirth ?? 'N/A')}
                 />
                 <DetailField label="Gender" value={license.Gender} />
                 <DetailField
                   label="Spayed/Neutered"
                   value={license.IsSpayedNeutered ? 'Yes' : 'No'}
                 />
-                 <DetailField
-                  label="Spayed/Neutered"
-                  value={license.IsNuisance ? 'Yes' : 'No'}
-                />
               </div>
-              {license.TagNumber && (
-                <div className="mt-4">
-                  <DetailField
-                    label="Microchip Number"
-                    value={license.TagNumber}
-                  />
-                </div>
-              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <DetailField  label="Tax Roll" value={license.Roll} />
+               <DetailField label="Tag Number" value={license.TagNumber} />
+               <DetailField label="Nuisance" value={license.IsNuisance ? 'Yes' : 'No'} />
+              </div>
             </div>
 
             {/* Owner Information Section */}
@@ -169,35 +162,12 @@ const LicenseDetailsModal = ({
                   label="Address"
                   value={
                     license.Address
-                      ? `${license.Address}, ${license.City}, ${license.State} ${license.ZipCode}`
+                      ? `${license.Address}, ${license.City}, ${license.Province} ${license.PostalCode}`
                       : 'N/A'
                   }
                 />
               </div>
             </div>
-
-            {/* Rabies Vaccination Section */}
-            {(license.RabiesVaccinationDate || license.VeterinarianName) && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Rabies Vaccination
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <DetailField
-                    label="Vaccination Date"
-                    value={formatDate(license.RabiesVaccinationDate)}
-                  />
-                  <DetailField
-                    label="Expiration Date"
-                    value={formatDate(license.RabiesVaccinationExpiration)}
-                  />
-                  <DetailField
-                    label="Veterinarian"
-                    value={license.VeterinarianName}
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
               {/* Footer Actions in LicenseDetailsModal */}

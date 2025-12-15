@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { dogAPI } from '../services/api';
 import {Dog} from '../types';
+import AddDogForm from '../components/AddDogForm';
+
 
 const DogsPage = () => {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+   // Add state for the form modal
+  const [isAddDogFormOpen, setIsAddDogFormOpen] = useState(false);
+
 
   useEffect(() => {
     loadDogs();
@@ -49,6 +54,11 @@ const DogsPage = () => {
     return `${years} years`;
   };
 
+  // Add handler for successful dog registration
+  const handleDogAdded = () => {
+    loadDogs(); // Reload the dogs list
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -61,7 +71,9 @@ const DogsPage = () => {
               </svg>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dogs</h1>
             </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-sm">
+            <button 
+            onClick={() => setIsAddDogFormOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-sm">
               + Register Dog
             </button>
           </div>
@@ -174,10 +186,7 @@ const DogsPage = () => {
                           {dog.Roll} 
                         </div>
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{dog.OwnerEmail || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{dog.OwnerPhone}</div>
-                      </td> */}
+                      
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button className="text-blue-600 hover:text-blue-900 mr-3 transition">
                           View
@@ -194,6 +203,13 @@ const DogsPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Add Dog Form Modal */}
+      <AddDogForm
+        isOpen={isAddDogFormOpen}
+        onClose={() => setIsAddDogFormOpen(false)}
+        onSuccess={handleDogAdded}
+      />
     </div>
   );
 };

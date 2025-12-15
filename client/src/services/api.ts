@@ -44,9 +44,9 @@ export const licenseAPI = {
   },
 
   // Get expiring licenses
-  getExpiring: async () => {
-    return fetchWithErrorHandling(`${API_BASE_URL}/licenses/status/expiring`);
-  },
+  // getExpiring: async () => {
+  //   return fetchWithErrorHandling(`${API_BASE_URL}/licenses/status/expiring`);
+  // },
 
   // Create new license
   create: async (licenseData: any) => {

@@ -66,7 +66,7 @@ const LicensesPage = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Active': return 'bg-green-100 text-green-800';
-      case 'Expiring': return 'bg-yellow-100 text-yellow-800';
+      // case 'Expiring': return 'bg-yellow-100 text-yellow-800';
       case 'Expired': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -75,11 +75,11 @@ const LicensesPage = () => {
   const stats = [
     { label: 'Total Licenses', value: licenses.length, icon: '📋' },
     { label: 'Active', value: licenses.filter(l => l.Status === 'Active').length, icon: '✓' },
-    { label: 'Expiring Soon', value: licenses.filter(l => l.Status === 'Expiring').length, icon: '⚠' },
+    // { label: 'Expiring Soon', value: licenses.filter(l => l.Status === 'Expiring').length, icon: '⚠' },
     { label: 'Expired', value: licenses.filter(l => l.Status === 'Expired').length, icon: '✕' }
   ];
 
-  function handleRenewLicense(license: License): void {
+  function handleRenewLicense(_license: License): void {
     throw new Error('Function not implemented.');
   }
 
@@ -141,7 +141,7 @@ const LicensesPage = () => {
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {['all', 'active', 'expiring', 'expired'].map(tab => (
+              {['all', 'active', 'expired'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -183,7 +183,6 @@ const LicensesPage = () => {
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dog</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiration</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
         </tr>
@@ -228,9 +227,7 @@ const LicensesPage = () => {
                 <div className="text-sm text-gray-900">{license.Email}</div>
                 <div className="text-sm text-gray-500">{license.Phone}</div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {new Date(license.ExpirationDate).toLocaleDateString()}
-              </td>
+             
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(license.Status)}`}>
                   {license.Status}

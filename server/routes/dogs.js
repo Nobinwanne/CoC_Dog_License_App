@@ -3,49 +3,6 @@ const router = express.Router();
 const sql = require('mssql');
 
 // Get all dogs
-// router.get('/', async (req, res) => {
-//   try {
-//     const result = await req.db.request()
-//       .query(`
-//         SELECT 
-//           d.DogID,
-//           d.OwnerID,
-//           d.DogName,
-//           d.Breed,
-//           d.Color,
-//           d.DateOfBirth,
-//           d.Gender,
-//           d.IsSpayedNeutered,
-//           d.IsNuisance,
-//           o.FirstName as OwnerFirstName,
-//           o.LastName as OwnerLastName,
-//           o.Email as OwnerEmail,
-//           o.Phone1 as OwnerPhone,
-//           o.Phone2 as OwnerAlternativePhone
-//         FROM Dogs d
-//         INNER JOIN Owners o ON d.OwnerID = o.OwnerID
-//         GROUP BY 
-//           d.DogID,
-//           d.OwnerID,
-//           d.DogName,
-//           d.Breed,
-//           d.Color,
-//           d.DateOfBirth,
-//           d.Gender,
-//           d.IsSpayedNeutered,
-//           d.IsNuisance,
-//           o.FirstName,
-//           o.LastName,
-//           o.Email,
-//           o.Phone1,
-//           o.Phone2
-//         ORDER BY d.DogName
-//       `);
-//     res.json(result.recordset);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
 
 router.get('/', async (req, res) => {
   try {
@@ -56,6 +13,7 @@ router.get('/', async (req, res) => {
           d.OwnerID,
           d.DogName,
           d.Breed,
+          d.Roll,
           d.Color,
           d.DateOfBirth,
           d.Gender,
@@ -70,6 +28,64 @@ router.get('/', async (req, res) => {
         ORDER BY d.DogName
       `);
     res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Register new dog
+router.post('/', async (req, res) => {
+  try {
+    const {
+      ownerId,
+      dogName,
+      breed,
+      roll,
+      color,
+      dateOfBirth,
+      gender,
+      isSpayedNeutered,
+      isNuisance
+    } = req.body;
+
+    // Validate required fields
+    if (!ownerId || !dogName) {
+      return res.status(400).json({ 
+        error: 'Owner ID and dog name are required' 
+      });
+    }
+
+    // Check if owner exists
+    const checkOwner = await req.db.request()
+      .input('ownerId', sql.Int, ownerId)
+      .query('SELECT OwnerID FROM Owners WHERE OwnerID = @ownerId');
+
+    if (checkOwner.recordset.length === 0) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+
+    const result = await req.db.request()
+      .input('ownerId', sql.Int, ownerId)
+      .input('dogName', sql.NVarChar, dogName)
+      .input('breed', sql.NVarChar, breed || null)
+      .input('roll', sql.NVarChar, roll || null)
+      .input('color', sql.NVarChar, color || null)
+      .input('dateOfBirth', sql.Date, dateOfBirth || null)
+      .input('gender', sql.NVarChar, gender || null)
+      .input('isSpayedNeutered', sql.Bit, isSpayedNeutered || 0)
+      .input('isNuisance', sql.Bit, isNuisance || 0)
+      .query(`
+        INSERT INTO Dogs 
+        (OwnerID, DogName, Breed, Roll, Color, DateOfBirth, Gender, IsSpayedNeutered, IsNuisance)
+        OUTPUT INSERTED.DogID, INSERTED.DogName, INSERTED.Breed
+        VALUES (@ownerId, @dogName, @breed, @color, @dateOfBirth, @gender, @isSpayedNeutered, @isNuisance)
+      `);
+
+    res.status(201).json({
+      dogId: result.recordset[0].DogID,
+      message: 'Dog registered successfully',
+      dog: result.recordset[0]
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
