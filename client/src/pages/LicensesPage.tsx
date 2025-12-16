@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { licenseAPI } from '../services/api';
 import LicenseDetailsModal from '../components/LicenseDetailsModal';
-import PaymentForm from '../components/PaymentForm';
+import PaymentDetailsModal from '../components/PaymentDetailsModal';
 import { License } from '../types';
-
+import AddLicenseForm from '../components/AddLicenseForm';
 
 const LicensesPage = () => {
- const [licenses, setLicenses] = useState<License[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Add new state for payment form
-  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Payment details modal state
+  const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
   const [selectedLicenseForPayment, setSelectedLicenseForPayment] = useState<License | null>(null);
-
+  
+  // Add license form state
+  const [isAddLicenseFormOpen, setIsAddLicenseFormOpen] = useState(false);
 
   useEffect(() => {
     loadLicenses();
@@ -36,15 +43,9 @@ const LicensesPage = () => {
     }
   };
 
-  // Add handler for opening payment form
-  const handleRecordPayment = (license: License) => {
+  const handleViewPaymentDetails = (license: License) => {
     setSelectedLicenseForPayment(license);
-    setIsPaymentFormOpen(true);
-  };
-
-  // Add handler for payment success
-  const handlePaymentSuccess = () => {
-    loadLicenses(); // Reload licenses after payment
+    setIsPaymentDetailsOpen(true);
   };
 
   const filteredLicenses = licenses.filter(license => {
@@ -63,10 +64,20 @@ const LicensesPage = () => {
     return matchesSearch && matchesTab;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredLicenses.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLicenses = filteredLicenses.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Reset to page 1 when search term or tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeTab]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Active': return 'bg-green-100 text-green-800';
-      // case 'Expiring': return 'bg-yellow-100 text-yellow-800';
       case 'Expired': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -75,17 +86,120 @@ const LicensesPage = () => {
   const stats = [
     { label: 'Total Licenses', value: licenses.length, icon: '📋' },
     { label: 'Active', value: licenses.filter(l => l.Status === 'Active').length, icon: '✓' },
-    // { label: 'Expiring Soon', value: licenses.filter(l => l.Status === 'Expiring').length, icon: '⚠' },
     { label: 'Expired', value: licenses.filter(l => l.Status === 'Expired').length, icon: '✕' }
   ];
 
-  function handleRenewLicense(_license: License): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleRenewLicense = (_license: License): void => {
+    // This would open a renewal form (similar to AddLicenseForm but for renewals)
+    alert('Renewal feature coming soon! This will allow you to renew an expired license and record a new payment.');
+  };
 
+  const handleAddNewLicense = () => {
+    loadLicenses();
+  };
 
-  return(
-     <div className="min-h-screen bg-gray-50">
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisibleButtons = 5;
+    
+    // Previous button
+    buttons.push(
+      <button
+        key="prev"
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-1 mx-1 rounded ${
+          currentPage === 1
+            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+        }`}
+      >
+        Previous
+      </button>
+    );
+
+    // Page number buttons
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+    
+    if (endPage - startPage < maxVisibleButtons - 1) {
+      startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+    }
+
+    // First page
+    if (startPage > 1) {
+      buttons.push(
+        <button
+          key={1}
+          onClick={() => goToPage(1)}
+          className="px-3 py-1 mx-1 rounded bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        buttons.push(<span key="ellipsis1" className="px-2">...</span>);
+      }
+    }
+
+    // Middle pages
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          className={`px-3 py-1 mx-1 rounded ${
+            currentPage === i
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttons.push(<span key="ellipsis2" className="px-2">...</span>);
+      }
+      buttons.push(
+        <button
+          key={totalPages}
+          onClick={() => goToPage(totalPages)}
+          className="px-3 py-1 mx-1 rounded bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    // Next button
+    buttons.push(
+      <button
+        key="next"
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-1 mx-1 rounded ${
+          currentPage === totalPages
+            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+        }`}
+      >
+        Next
+      </button>
+    );
+
+    return buttons;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -97,7 +211,7 @@ const LicensesPage = () => {
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Licenses</h2>
             </div>
             <button
-              onClick={() => { setSelectedLicense(null); setIsModalOpen(true); }}
+              onClick={() => setIsAddLicenseFormOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-sm"
             >
               + New License
@@ -159,7 +273,7 @@ const LicensesPage = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {stats.map((stat, idx) => (
             <div key={idx} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
               <div className="flex items-center justify-between">
@@ -175,109 +289,134 @@ const LicensesPage = () => {
 
         {/* Licenses Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">License #</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dog</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
-        {loading ? (
-          <tr>
-            <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3">Loading licenses...</span>
-              </div>
-            </td>
-          </tr>
-        ) : filteredLicenses.length === 0 ? (
-          <tr>
-            <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-              <div className="flex flex-col items-center">
-                <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p>No licenses found</p>
-              </div>
-            </td>
-          </tr>
-        ) : (
-          filteredLicenses.map((license) => (
-            <tr key={license.LicenseID} className="hover:bg-gray-50 transition">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                {license.LicenseNumber}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">{license.DogName}</div>
-                <div className="text-sm text-gray-500">{license.Breed}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">
-                  {license.FirstName} {license.LastName}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">License #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dog</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-3">Loading licenses...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentLicenses.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p>{filteredLicenses.length === 0 && searchTerm ? 'No licenses found matching your search' : 'No licenses found'}</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  currentLicenses.map((license) => (
+                    <tr key={license.LicenseID} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                        {license.LicenseNumber}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{license.DogName}</div>
+                        <div className="text-sm text-gray-500">{license.Breed}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {license.FirstName} {license.LastName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{license.Email}</div>
+                        <div className="text-sm text-gray-500">{license.Phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(license.Status)}`}>
+                          {license.Status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => { setSelectedLicense(license); setIsDetailsModalOpen(true); }}
+                          className="text-blue-600 hover:text-blue-900 mr-3 transition"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleViewPaymentDetails(license)}
+                          className="text-green-600 hover:text-green-900 mr-3 transition"
+                        >
+                          Receipt
+                        </button>
+                        {license.Status === 'Expired' && (
+                          <button 
+                            onClick={() => handleRenewLicense(license)}
+                            className="text-orange-600 hover:text-orange-900 transition"
+                          >
+                            Renew
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {!loading && filteredLicenses.length > 0 && (
+            <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(indexOfLastItem, filteredLicenses.length)}</span> of{' '}
+                    <span className="font-medium">{filteredLicenses.length}</span> entries
+                  </p>
                 </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{license.Email}</div>
-                <div className="text-sm text-gray-500">{license.Phone}</div>
-              </td>
-             
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(license.Status)}`}>
-                  {license.Status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button
-                  onClick={() => { setSelectedLicense(license); setIsModalOpen(true); }}
-                  className="text-blue-600 hover:text-blue-900 mr-3 transition"
-                >
-                  View
-                </button>
-                <button 
-                  onClick={() => handleRecordPayment(license)}
-                  className="text-green-600 hover:text-green-900 mr-3 transition"
-                >
-                  Payment
-                </button>
-                <button 
-                  onClick={() => handleRenewLicense(license)}
-                  className="text-orange-600 hover:text-orange-900 transition"
-                >
-                  Renew
-                </button>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+                <div className="flex items-center">
+                  {renderPaginationButtons()}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* License Details Modal */}
       <LicenseDetailsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
         license={selectedLicense}
       />
 
-       {/* Add Payment Form Modal */}
-      <PaymentForm
-        isOpen={isPaymentFormOpen}
-        onClose={() => setIsPaymentFormOpen(false)}
+      {/* Add License Form Modal */}
+      <AddLicenseForm
+        isOpen={isAddLicenseFormOpen}
+        onClose={() => setIsAddLicenseFormOpen(false)}
+        onSuccess={handleAddNewLicense}
+      />
+
+      {/* Payment Details Modal (Receipt) */}
+      <PaymentDetailsModal
+        isOpen={isPaymentDetailsOpen}
+        onClose={() => setIsPaymentDetailsOpen(false)}
         license={selectedLicenseForPayment}
-        onPaymentSuccess={handlePaymentSuccess}
       />
     </div>
-  )
+  );
 };
 
 export default LicensesPage;

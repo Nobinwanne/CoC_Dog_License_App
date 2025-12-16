@@ -110,7 +110,7 @@ const LicenseDetailsModal = ({
                   label="Issue Date"
                   value={formatDate(license.IssueDate)}
                 />
-              
+                <DetailField label="Issue Year" value={license.IssueYear} />
                 <DetailField label="Fee" value={`$${license.Fee?.toFixed(2)}`} />
               </div>
             </div>
@@ -178,23 +178,10 @@ const LicenseDetailsModal = ({
             >
               Close
             </button>
-            <button 
-            onClick={() => {
-              onClose();
-              // You'll need to pass a callback to open payment form
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-sm"
-              >
-                Record Payment
-                </button>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
-              Edit License
+              Delete License
             </button>
-            {license.Status !== 'Active' && (
-              <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-sm">
-                Renew License
-              </button>
-            )}
+         
           </div>
           
         </div>

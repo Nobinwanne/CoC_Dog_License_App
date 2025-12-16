@@ -169,9 +169,89 @@ export const paymentAPI = {
   },
 };
 
+export const tagAPI = {
+getAll: async () => {
+  return fetchWithErrorHandling(`${API_BASE_URL}/tags`);
+},
+};
+
+// Add this to your services/api.ts file
+export const kennelAPI = {
+  getAll: async () => {
+    const response = await fetch('/api/kennels');
+    if (!response.ok) throw new Error('Failed to fetch kennels');
+    return response.json();
+  },
+
+  getById: async (id: number) => {
+    const response = await fetch(`/api/kennels/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch kennel');
+    return response.json();
+  },
+
+  getByOwnerId: async (ownerId: number) => {
+    const response = await fetch(`/api/kennels/owner/${ownerId}`);
+    if (!response.ok) throw new Error('Failed to fetch owner kennels');
+    return response.json();
+  },
+
+  checkEligibility: async (ownerId: number) => {
+    const response = await fetch(`/api/kennels/check-eligibility/${ownerId}`);
+    if (!response.ok) throw new Error('Failed to check eligibility');
+    return response.json();
+  },
+
+  create: async (data: {
+    ownerId: number;
+    kennelLicenseNumber: string;
+    issueYear: string;
+    issueDate: string;
+    fee: number;
+    paymentMethod: string;
+    transactionId: string | null;
+    paymentStatus: string;
+    notes: string;
+  }) => {
+    const response = await fetch('/api/kennels', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create kennel license');
+    }
+    return response.json();
+  },
+
+  update: async (id: number, data: {
+    status?: string;
+    notes?: string;
+    paymentStatus?: string;
+  }) => {
+    const response = await fetch(`/api/kennels/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Failed to update kennel license');
+    return response.json();
+  },
+
+  delete: async (id: number) => {
+    const response = await fetch(`/api/kennels/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete kennel license');
+    return response.json();
+  }
+};
+
 export default {
   license: licenseAPI,
   owner: ownerAPI,
   dog: dogAPI,
   payment: paymentAPI,
+  tag: tagAPI,
+  kennel: kennelAPI
 };

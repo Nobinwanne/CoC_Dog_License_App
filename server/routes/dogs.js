@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const sql = require('mssql');
 
-// Get all dogs
 
+// Get all dogs
 router.get('/', async (req, res) => {
   try {
     const result = await req.db.request()
@@ -12,8 +12,8 @@ router.get('/', async (req, res) => {
           d.DogID,
           d.OwnerID,
           d.DogName,
-          d.Breed,
           d.Roll,
+          d.Breed,
           d.Color,
           d.DateOfBirth,
           d.Gender,
@@ -39,8 +39,8 @@ router.post('/', async (req, res) => {
     const {
       ownerId,
       dogName,
-      breed,
       roll,
+      breed,
       color,
       dateOfBirth,
       gender,
@@ -76,9 +76,17 @@ router.post('/', async (req, res) => {
       .input('isNuisance', sql.Bit, isNuisance || 0)
       .query(`
         INSERT INTO Dogs 
-        (OwnerID, DogName, Breed, Roll, Color, DateOfBirth, Gender, IsSpayedNeutered, IsNuisance)
-        OUTPUT INSERTED.DogID, INSERTED.DogName, INSERTED.Breed
-        VALUES (@ownerId, @dogName, @breed, @color, @dateOfBirth, @gender, @isSpayedNeutered, @isNuisance)
+        (OwnerID, DogName, Roll, Breed, Color, DateOfBirth, Gender, IsSpayedNeutered, IsNuisance)
+        OUTPUT 
+        INSERTED.DogID, 
+        INSERTED.DogName, 
+        INSERTED.Roll, 
+        INSERTED.Breed,
+        INSERTED.Color, 
+        INSERTED.DateOfBirth, 
+        INSERTED.IsSpayedNeutered,
+        INSERTED.IsNuisance
+        VALUES (@ownerId, @dogName, @breed, @Roll, @color, @dateOfBirth, @gender, @isSpayedNeutered, @isNuisance)
       `);
 
     res.status(201).json({

@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { dogAPI, ownerAPI } from '../services/api';
+import { Owner, AddDogFormProps } from '../types';
 
-interface Owner {
-  OwnerID: number;
-  FirstName: string;
-  LastName: string;
-  Email: string;
-}
 
-interface AddDogFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-}
 
 const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) => {
   const [owners, setOwners] = useState<Owner[]>([]);
@@ -26,6 +16,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
     ownerId: '',
     ownerName: '',
     dogName: '',
+    roll: '',
     breed: '',
     color: '',
     dateOfBirth: '',
@@ -134,6 +125,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
       ownerName: '',
       dogName: '',
       breed: '',
+      roll: '',
       color: '',
       dateOfBirth: '',
       gender: 'Male',
@@ -258,6 +250,22 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="Enter dog's name"
+              />
+            </div>
+
+           {/* Roll */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Roll <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="roll"
+                value={formData.roll}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                placeholder="Enter Roll number where dog lives"
               />
             </div>
 
