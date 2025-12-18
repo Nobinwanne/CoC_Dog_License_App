@@ -8,6 +8,7 @@ const Navigation = () => {
     { path: '/', label: 'Licenses', icon: '📋' },
     { path: '/dogs', label: 'Dogs', icon: '🐕' },
     { path: '/owners', label: 'Owners', icon: '👥' },
+    { path: '/kennels', label: 'Kennels', icon: '🏠' },
   ];
 
   const isActive = (path: string) => {
@@ -24,7 +25,9 @@ const Navigation = () => {
               to={item.path}
               className={`inline-flex items-center px-1 pt-4 pb-3 border-b-2 text-sm font-medium transition ${
                 isActive(item.path)
-                  ? 'border-blue-500 text-blue-600'
+                  ? item.path === '/kennels'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >

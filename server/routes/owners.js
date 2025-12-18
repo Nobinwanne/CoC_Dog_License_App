@@ -58,62 +58,84 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+
 // Get owner with their dogs
 router.get('/:id/dogs', async (req, res) => {
   try {
-    const result = await req.db.request()
+    // First, get the owner info
+    const ownerResult = await req.db.request()
+      .input('id', sql.Int, req.params.id)
+      .query('SELECT * FROM Owners WHERE OwnerID = @id');
+    
+    if (ownerResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+
+    const owner = ownerResult.recordset[0];
+
+    // Get dogs with all their tags
+    const dogsResult = await req.db.request()
       .input('id', sql.Int, req.params.id)
       .query(`
         SELECT 
-          o.*,
           d.DogID,
           d.DogName,
           d.Breed,
+          d.Roll,
           d.Color,
           d.DateOfBirth,
           d.Gender,
           d.IsSpayedNeutered,
-          d.IsNuisance
-        FROM Owners o
-        LEFT JOIN Dogs d ON o.OwnerID = d.OwnerID
-        WHERE o.OwnerID = @id
+          d.IsNuisance,
+          t.TagNumber
+        FROM Dogs d
+        LEFT JOIN Licenses l ON d.DogID = l.DogID AND l.Status = 'Active'
+        LEFT JOIN Tags t ON l.TagID = t.TagID
+        WHERE d.OwnerID = @id
+        ORDER BY d.DogName, t.TagNumber
       `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
-    }
 
-    // Format response to group dogs under owner
-    const owner = {
-      OwnerID: result.recordset[0].OwnerID,
-      FirstName: result.recordset[0].FirstName,
-      LastName: result.recordset[0].LastName,
-      Email: result.recordset[0].Email,
-      Phone1: result.recordset[0].Phone1,
-      Phone2: result.recordset[0].Phone2,
-      Address: result.recordset[0].Address,
-      City: result.recordset[0].City,
-      Province: result.recordset[0].Province,
-      PostalCode: result.recordset[0].PostalCode,
-      CreatedAt: result.recordset[0].CreatedAt,
-      UpdatedAt: result.recordset[0].UpdatedAt,
-      dogs: result.recordset
-        .filter(row => row.DogID !== null)
-        .map(row => ({
+    // Group tags by dog (in case a dog has multiple tags)
+    const dogsMap = new Map();
+    
+    dogsResult.recordset.forEach(row => {
+      if (!dogsMap.has(row.DogID)) {
+        dogsMap.set(row.DogID, {
           DogID: row.DogID,
           DogName: row.DogName,
-          DogRoll: row.Roll,
+          Roll: row.Roll,
           Breed: row.Breed,
           Color: row.Color,
           DateOfBirth: row.DateOfBirth,
           Gender: row.Gender,
           IsSpayedNeutered: row.IsSpayedNeutered,
-          IsNuisance: row.IsNuisance
-        }))
+          IsNuisance: row.IsNuisance,
+          TagNumber: row.TagNumber, // First/primary tag
+          tags: [] // Array of all tags
+        });
+      }
+      
+      // Add tag to the tags array if it exists
+      if (row.TagNumber) {
+        const dog = dogsMap.get(row.DogID);
+        if (!dog.tags.includes(row.TagNumber)) {
+          dog.tags.push(row.TagNumber);
+        }
+      }
+    });
+
+    // Convert map to array
+    const dogs = Array.from(dogsMap.values());
+
+    // Format response
+    const response = {
+      ...owner,
+      dogs: dogs
     };
 
-    res.json(owner);
+    res.json(response);
   } catch (err) {
+    console.error('Error in GET /:id/dogs:', err);
     res.status(500).json({ error: err.message });
   }
 });

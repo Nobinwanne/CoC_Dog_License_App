@@ -10,7 +10,7 @@ export interface License {
   OwnerID: number;
   DogName: string;
   Breed: string;
-  Roll: string | number;
+  Roll: number;
   Color?: string;
   DateOfBirth?: string;
   Gender?: string;
@@ -62,6 +62,8 @@ export interface Dog {
   OwnerLastName: string;
   OwnerEmail: string;
   OwnerPhone: string;
+  TagNumber: string;
+  tags: [];
 }
 
 export interface Tag {
@@ -71,6 +73,26 @@ export interface Tag {
   Status: string;
 }
 
+export interface RenewKennelFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  kennelId: number | null;
+}
+
+export interface KennelDetails {
+  KennelID: number;
+  OwnerID: number;
+  KennelLicenseNumber: string;
+  IssueDate: string;
+  ExpiryDate: string;
+  IssueYear: string;
+  Fee: number;
+  NumberOfDogs: number;
+  FirstName: string;
+  LastName: string;
+}
+
 export interface EditOwnerFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -78,11 +100,20 @@ export interface EditOwnerFormProps {
   onSuccess?: () => void;
 }
 
+export interface DogDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  dog: Dog | null;
+}
+
+
 export interface EditDogFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
   dog: Dog | null;
-  onSuccess?: () => void;
 }
 
 export interface LicenseDetailsModalProps {
@@ -94,7 +125,7 @@ export interface LicenseDetailsModalProps {
 export interface DogDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  dog: License | null;
+  // dog: License | null;
 }
 
 
@@ -107,6 +138,12 @@ export interface OwnerDetailsModalProps {
   onIssueKennelLicense: () => void;
 }
 
+export interface AddKennelLicenseFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  preselectedOwnerId?: number | null;
+}
 
 export interface DetailFieldProps {
   label: string;
@@ -134,5 +171,26 @@ export interface PaymentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   license: License | null;
+}
+
+export interface Kennel {
+  KennelID: number;
+  OwnerID: number;
+  KennelLicenseNumber: string;
+  IssueDate: string;
+  ExpiryDate: string;
+  IssueYear: string;
+  Fee: number;
+  Status: string;
+  PaymentMethod: string;
+  TransactionID: string;
+  PaymentStatus: string;
+  Notes: string;
+  NumberOfDogs: number;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Phone: string;
+  CreatedAt: string;
 }
 

@@ -173,11 +173,18 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Calculate expiry date (1 year from issue date)
+    const issueDateObj = issueDate ? new Date(issueDate) : new Date();
+    const expiryDateObj = new Date(issueDateObj);
+    expiryDateObj.setFullYear(expiryDateObj.getFullYear() + 1);
+    const calculatedExpiryDate = expiryDateObj.toISOString().split('T')[0];
+
     // Create the kennel license
     const result = await req.db.request()
       .input('ownerId', sql.Int, ownerId)
       .input('kennelLicenseNumber', sql.NVarChar, kennelLicenseNumber)
       .input('issueDate', sql.Date, issueDate || new Date())
+      .input('expiryDate', sql.Date, calculatedExpiryDate)
       .input('issueYear', sql.NVarChar, issueYear)
       .input('fee', sql.Decimal(10, 2), fee || 100.00)
       .input('status', sql.NVarChar, 'Active')
@@ -188,9 +195,9 @@ router.post('/', async (req, res) => {
       .input('numberOfDogs', sql.Int, numberOfDogs)
       .query(`
         INSERT INTO Kennels 
-        (OwnerID, KennelLicenseNumber, IssueDate, IssueYear, Fee, Status, PaymentMethod, TransactionID, PaymentStatus, Notes, NumberOfDogs)
+        (OwnerID, KennelLicenseNumber, IssueDate, ExpiryDate, IssueYear, Fee, Status, PaymentMethod, TransactionID, PaymentStatus, Notes, NumberOfDogs)
         OUTPUT INSERTED.KennelID, INSERTED.KennelLicenseNumber
-        VALUES (@ownerId, @kennelLicenseNumber, @issueDate, @issueYear, @fee, @status, @paymentMethod, @transactionId, @paymentStatus, @notes, @numberOfDogs)
+        VALUES (@ownerId, @kennelLicenseNumber, @issueDate, @expiryDate, @issueYear, @fee, @status, @paymentMethod, @transactionId, @paymentStatus, @notes, @numberOfDogs)
       `);
 
     console.log('Kennel license created:', result.recordset[0]);

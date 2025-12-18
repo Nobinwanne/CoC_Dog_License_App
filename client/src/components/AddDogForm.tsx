@@ -89,6 +89,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
       const dogData = {
         ownerId: parseInt(formData.ownerId),
         dogName: formData.dogName.trim(),
+        roll: formData.roll,
         breed: formData.breed.trim() || null,
         color: formData.color.trim() || null,
         dateOfBirth: formData.dateOfBirth || null,
@@ -256,17 +257,23 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
            {/* Roll */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Roll <span className="text-red-500">*</span>
+                Tax Roll Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="roll"
                 value={formData.roll}
-                onChange={handleChange}
+                onChange={(e) => {
+                  //only allow numbers
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setFormData(prev => ({ ...prev, roll: value}))
+                }}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="Enter Roll number where dog lives"
+                inputMode='numeric'
               />
+              <p className="text-xs text-gray-500 mt-1">Numbers only</p>
             </div>
 
             {/* Breed and Color */}

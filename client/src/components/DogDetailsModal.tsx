@@ -1,13 +1,6 @@
 import React from 'react';
-import { Dog } from '../types';
+import { Dog, DogDetailsModalProps } from '../types';
 
-interface DogDetailsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  dog: Dog | null;
-}
 
 const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
   isOpen,
@@ -142,30 +135,6 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
               )}
             </div>
           </div>
-
-          {/* Additional Information */}
-          {/* {dog.Notes && (
-            <div className="mt-6">
-              <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 mb-3">Notes</h4>
-              <p className="text-gray-700 whitespace-pre-wrap">{dog.Notes}</p>
-            </div>
-          )} */}
-
-          {/* Timestamps */}
-          {/* <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
-              {dog.CreatedAt && (
-                <div>
-                  <span className="font-medium">Registered:</span> {formatDate(dog.CreatedAt)}
-                </div>
-              )}
-              {dog.UpdatedAt && (
-                <div>
-                  <span className="font-medium">Last Updated:</span> {formatDate(dog.UpdatedAt)}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         {/* Footer Actions */}
@@ -176,18 +145,13 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
           >
             Close
           </button>
+          
           {/* <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-          >
-            Edit Dog
-          </button> */}
-          <button
             onClick={onDelete}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
           >
             Delete Dog
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

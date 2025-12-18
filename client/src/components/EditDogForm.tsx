@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { dogAPI } from '../services/api';
-import { Dog } from '../types';
+import { EditDogFormProps } from '../types';
 
-interface EditDogFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  dog: Dog | null;
-}
+
 
 const EditDogForm: React.FC<EditDogFormProps> = ({
   isOpen,
@@ -23,7 +18,7 @@ const EditDogForm: React.FC<EditDogFormProps> = ({
     gender: 'M',
     isSpayedNeutered: false,
     isNuisance: false,
-    roll: 0,
+    roll: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -35,12 +30,12 @@ const EditDogForm: React.FC<EditDogFormProps> = ({
       setFormData({
         dogName: dog.DogName || '',
         breed: dog.Breed || '',
+        roll: dog.Roll || '',
         color: dog.Color || '',
         dateOfBirth: dog.DateOfBirth ? dog.DateOfBirth.split('T')[0] : '',
         gender: dog.Gender || 'M',
         isSpayedNeutered: dog.IsSpayedNeutered || false,
-        isNuisance: dog.IsNuisance || false,
-        roll: dog.Roll || 0,
+        isNuisance: dog.IsNuisance || false
       });
       setError(null);
     }
@@ -230,10 +225,11 @@ const EditDogForm: React.FC<EditDogFormProps> = ({
                 <input
                   type="text"
                   name="roll"
-                  value={formData.roll}
                   onChange={handleChange}
+                  value={formData.roll}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   placeholder="Enter tax roll number"
+                  inputMode='numeric'
                 />
               </div>
             </div>

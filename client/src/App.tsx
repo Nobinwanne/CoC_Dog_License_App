@@ -4,6 +4,7 @@ import Navigation from './components/Navigation';
 import LicensesPage from './pages/LicensesPage';
 import DogsPage from './pages/DogsPage';
 import OwnersPage from './pages/OwnersPage';
+import KennelsPage from './pages/KennelsPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="/" element={<LicensesPage />} />
           <Route path="/dogs" element={<DogsPage />} />
           <Route path="/owners" element={<OwnersPage />} />
+          <Route path="/kennels" element={<KennelsPage />} />
         </Routes>
       </div>
     </Router>

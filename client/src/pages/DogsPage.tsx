@@ -286,6 +286,7 @@ const DogsPage = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dog Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Breed</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spayed/Neutered</th>
@@ -317,7 +318,9 @@ const DogsPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{dog.Breed}</div>
-                        <div className="text-sm text-gray-500">{dog.Color}</div>
+                      </td>
+                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{dog.Color}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{calculateAge(dog.DateOfBirth)}</div>
@@ -335,7 +338,7 @@ const DogsPage = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm text-gray-900">
                           {dog.Roll} 
                         </div>
                       </td>

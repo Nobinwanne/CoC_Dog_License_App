@@ -1,7 +1,6 @@
-// client/src/services/api.js
+// client/src/services/api.ts
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5030/api';
-
 
 // Generic fetch wrapper with error handling
 const fetchWithErrorHandling = async (url: string, options: RequestInit = {}) => {
@@ -28,27 +27,18 @@ const fetchWithErrorHandling = async (url: string, options: RequestInit = {}) =>
 
 // License API
 export const licenseAPI = {
-  // Get all licenses
   getAll: async () => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses`);
   },
 
-  // Get license by ID
   getById: async (id: number) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses/${id}`);
   },
 
-  // Search licenses
   search: async (searchTerm: string) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses/search/${searchTerm}`);
   },
 
-  // Get expiring licenses
-  // getExpiring: async () => {
-  //   return fetchWithErrorHandling(`${API_BASE_URL}/licenses/status/expiring`);
-  // },
-
-  // Create new license
   create: async (licenseData: any) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses`, {
       method: 'POST',
@@ -56,7 +46,6 @@ export const licenseAPI = {
     });
   },
 
-  // Update license
   update: async (id: number, licenseData: any) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses/${id}`, {
       method: 'PUT',
@@ -64,7 +53,6 @@ export const licenseAPI = {
     });
   },
 
-  // Renew license
   renew: async (id: number, renewalData: any) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses/${id}/renew`, {
       method: 'POST',
@@ -72,7 +60,6 @@ export const licenseAPI = {
     });
   },
 
-  // Delete license
   delete: async (id: number) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/licenses/${id}`, {
       method: 'DELETE',
@@ -88,6 +75,10 @@ export const ownerAPI = {
 
   getById: async (id: number) => {
     return fetchWithErrorHandling(`${API_BASE_URL}/owners/${id}`);
+  },
+
+  getWithDogs: async (id: number) => {
+    return fetchWithErrorHandling(`${API_BASE_URL}/owners/${id}/dogs`);
   },
 
   create: async (ownerData: any) => {
@@ -146,59 +137,30 @@ export const dogAPI = {
   },
 };
 
-// Payment API
-export const paymentAPI = {
-  getAll: async () => {
-    return fetchWithErrorHandling(`${API_BASE_URL}/payments`);
-  },
 
-  getByLicense: async (licenseId: number) => {
-    return fetchWithErrorHandling(`${API_BASE_URL}/payments/license/${licenseId}`);
-  },
-
-  create: async (paymentData: any) => {
-    return fetchWithErrorHandling(`${API_BASE_URL}/payments`, {
-      method: 'POST',
-      body: JSON.stringify(paymentData),
-    });
-  },
-
-    // Get payment statistics
-  getStatistics: async () => {
-    return fetchWithErrorHandling(`${API_BASE_URL}/payments/statistics/summary`);
-  },
-};
-
+// Tag API
 export const tagAPI = {
-getAll: async () => {
-  return fetchWithErrorHandling(`${API_BASE_URL}/tags`);
-},
+  getAll: async () => {
+    return fetchWithErrorHandling(`${API_BASE_URL}/tags`);
+  },
 };
 
-// Add this to your services/api.ts file
+// Kennel API
 export const kennelAPI = {
   getAll: async () => {
-    const response = await fetch('/api/kennels');
-    if (!response.ok) throw new Error('Failed to fetch kennels');
-    return response.json();
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels`);
   },
 
   getById: async (id: number) => {
-    const response = await fetch(`/api/kennels/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch kennel');
-    return response.json();
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels/${id}`);
   },
 
   getByOwnerId: async (ownerId: number) => {
-    const response = await fetch(`/api/kennels/owner/${ownerId}`);
-    if (!response.ok) throw new Error('Failed to fetch owner kennels');
-    return response.json();
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels/owner/${ownerId}`);
   },
 
   checkEligibility: async (ownerId: number) => {
-    const response = await fetch(`/api/kennels/check-eligibility/${ownerId}`);
-    if (!response.ok) throw new Error('Failed to check eligibility');
-    return response.json();
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels/check-eligibility/${ownerId}`);
   },
 
   create: async (data: {
@@ -212,16 +174,10 @@ export const kennelAPI = {
     paymentStatus: string;
     notes: string;
   }) => {
-    const response = await fetch('/api/kennels', {
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create kennel license');
-    }
-    return response.json();
   },
 
   update: async (id: number, data: {
@@ -229,21 +185,16 @@ export const kennelAPI = {
     notes?: string;
     paymentStatus?: string;
   }) => {
-    const response = await fetch(`/api/kennels/${id}`, {
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to update kennel license');
-    return response.json();
   },
 
   delete: async (id: number) => {
-    const response = await fetch(`/api/kennels/${id}`, {
-      method: 'DELETE'
+    return fetchWithErrorHandling(`${API_BASE_URL}/kennels/${id}`, {
+      method: 'DELETE',
     });
-    if (!response.ok) throw new Error('Failed to delete kennel license');
-    return response.json();
   }
 };
 
@@ -251,7 +202,6 @@ export default {
   license: licenseAPI,
   owner: ownerAPI,
   dog: dogAPI,
-  payment: paymentAPI,
   tag: tagAPI,
   kennel: kennelAPI
 };

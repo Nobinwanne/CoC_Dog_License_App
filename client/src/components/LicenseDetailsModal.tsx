@@ -178,9 +178,9 @@ const LicenseDetailsModal = ({
             >
               Close
             </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
+            {/* <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
               Delete License
-            </button>
+            </button> */}
          
           </div>
           

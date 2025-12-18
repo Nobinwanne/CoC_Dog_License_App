@@ -54,7 +54,6 @@ app.use((req, res, next) => {
 const ownerRoutes = require('./routes/owners');
 const dogRoutes = require('./routes/dogs');
 const licenseRoutes = require('./routes/licenses');
-const paymentRoutes = require('./routes/payments');
 const tagRoutes = require('./routes/tags');
 const kennelRoutes = require('./routes/kennels')
 
@@ -63,7 +62,6 @@ const kennelRoutes = require('./routes/kennels')
 app.use('/api/owners', ownerRoutes);
 app.use('/api/dogs', dogRoutes);
 app.use('/api/licenses', licenseRoutes);
-app.use('/api/payments', paymentRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/kennels', kennelRoutes)
 

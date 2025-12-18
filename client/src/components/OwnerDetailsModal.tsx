@@ -6,7 +6,6 @@ const OwnerDetailsModal: React.FC<OwnerDetailsModalProps> = ({
   isOpen, 
   onClose, 
   owner,
-  onDelete,
   onIssueKennelLicense,
 }) => {
 
@@ -97,12 +96,12 @@ const OwnerDetailsModal: React.FC<OwnerDetailsModalProps> = ({
                 Issue Kennel License
                 </button>
               )}
-            <button
+            {/* <button
               onClick={onDelete}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium shadow-sm"
             >
               Delete Owner
-            </button>
+            </button> */}
             <div className="flex gap-3">
               <button
                 onClick={onClose}

@@ -1,27 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { kennelAPI, ownerAPI } from '../services/api';
+import {Owner, Dog, AddKennelLicenseFormProps} from '../types'
 
-interface AddKennelLicenseFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  preselectedOwnerId?: number | null;
-}
 
-interface Owner {
-  OwnerID: number;
-  FirstName: string;
-  LastName: string;
-  Email: string;
-  DogCount?: number;
-}
-
-interface Dog {
-  DogID: number;
-  DogName: string;
-  Breed: string;
-  TagNumber: string;
-}
 
 const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
   isOpen,
@@ -33,6 +14,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
   const [owners, setOwners] = useState<Owner[]>([]);
   const [eligibleOwners, setEligibleOwners] = useState<Owner[]>([]);
   const [selectedOwnerId, setSelectedOwnerId] = useState<number | null>(preselectedOwnerId);
+  const [selectedOwner, setSelectedOwner] = useState<Owner | null>(null);
   const [ownerDogs, setOwnerDogs] = useState<Dog[]>([]);
   
   const [formData, setFormData] = useState({
@@ -55,6 +37,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
       loadOwners();
       if (preselectedOwnerId) {
         setSelectedOwnerId(preselectedOwnerId);
+        loadOwnerDetails(preselectedOwnerId);
         loadOwnerDogs(preselectedOwnerId);
       }
     }
@@ -100,16 +83,32 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
   };
 
   const loadOwnerDogs = async (ownerId: number) => {
-  try {
-    // Use the owner's dogs endpoint instead
-    const response = await fetch(`/api/owners/${ownerId}/dogs`);
-    const ownerData = await response.json();
-    setOwnerDogs(ownerData.dogs || []); // Extract dogs array from owner data
-  } catch (err) {
-    console.error('Error loading owner dogs:', err);
-    setError('Failed to load owner dogs');
-  }
-};
+    try {
+      console.log('Loading dogs for owner:', ownerId);
+      const ownerData = await ownerAPI.getWithDogs(ownerId);
+      console.log('Owner data received:', ownerData);
+      
+      const dogs = ownerData.dogs || [];
+      console.log('Dogs extracted:', dogs.length, 'dogs');
+      setOwnerDogs(dogs);
+      
+      if (dogs.length === 0) {
+        setError('This owner has no dogs registered');
+      }
+    } catch (err) {
+      console.error('Error loading owner dogs:', err);
+      setError(`Failed to load owner dogs: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const loadOwnerDetails = async (ownerId: number) => {
+    try {
+      const ownerData = await ownerAPI.getWithDogs(ownerId);
+      setSelectedOwner(ownerData);
+    } catch (err) {
+      console.error('Error loading owner details:', err);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -163,6 +162,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
       setStep(preselectedOwnerId ? 2 : 1);
       if (!preselectedOwnerId) {
         setSelectedOwnerId(null);
+        setSelectedOwner(null);
       }
       setOwnerDogs([]);
       setSearchTerm('');
@@ -187,6 +187,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
       return;
     }
     if (step === 1 && selectedOwnerId) {
+      await loadOwnerDetails(selectedOwnerId);
       await loadOwnerDogs(selectedOwnerId);
     }
     setError(null);
@@ -202,8 +203,6 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
     `${owner.FirstName} ${owner.LastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     owner.Email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const selectedOwner = eligibleOwners.find(o => o.OwnerID === selectedOwnerId);
 
   if (!isOpen) return null;
 
@@ -301,7 +300,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
                           <div className="text-sm text-gray-500">{owner.Email}</div>
                         </div>
                         <div className="text-sm font-medium text-green-600">
-                          {owner.DogCount} dogs
+                          {owner.dogCount} dogs
                         </div>
                       </div>
                     </div>
@@ -323,7 +322,7 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
                   <p className="text-sm text-gray-600">Owner:</p>
                   <p className="font-medium">{selectedOwner.FirstName} {selectedOwner.LastName}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {selectedOwner.DogCount} dogs will be covered under this kennel license
+                    {selectedOwner.dogCount} dogs will be covered under this kennel license
                   </p>
                 </div>
               )}
@@ -349,7 +348,11 @@ const AddKennelLicenseForm: React.FC<AddKennelLicenseFormProps> = ({
                         <tr key={dog.DogID}>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">{dog.DogName}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{dog.Breed}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{dog.TagNumber || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {dog.tags && dog.tags.length > 0 
+                              ? dog.tags.join(', ')
+                              : dog.TagNumber || 'N/A'}
+                          </td>
                         </tr>
                       ))
                     )}
