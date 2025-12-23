@@ -1,34 +1,33 @@
-import React from 'react';
-import { Dog, DogDetailsModalProps } from '../types';
-
+import React from "react";
+import { DogDetailsModalProps } from "../types";
 
 const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
   isOpen,
   onClose,
   onEdit,
   onDelete,
-  dog
+  dog,
 }) => {
   if (!isOpen || !dog) return null;
 
   const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return 'Unknown';
+    if (!dateOfBirth) return "Unknown";
     const today = new Date();
     const birth = new Date(dateOfBirth);
     const years = today.getFullYear() - birth.getFullYear();
     const months = today.getMonth() - birth.getMonth();
-    
+
     if (years === 0) return `${months} months`;
     if (months < 0) return `${years - 1} years`;
     return `${years} years`;
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -39,8 +38,18 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
         <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <svg className="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-6 w-6 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <h2 className="text-xl font-bold">Dog Details</h2>
             </div>
@@ -48,8 +57,18 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
               onClick={onClose}
               className="text-white hover:text-gray-200 transition"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -59,19 +78,31 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
         <div className="px-6 py-4">
           {/* Dog Name and Basic Info */}
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{dog.DogName}</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {dog.DogName}
+            </h3>
             <div className="flex flex-wrap gap-2">
               <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                {dog.Gender === 'M' ? 'Male' : 'Female'}
+                {dog.Gender === "M" ? "Male" : "Female"}
               </span>
               {dog.IsSpayedNeutered && (
                 <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                   ✓ Spayed/Neutered
                 </span>
               )}
-              {dog.IsNuisance && (
-                <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+              {dog.IsServiceDog && (
+                <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                  🦮 Service Dog
+                </span>
+              )}
+              {dog.IsNuisance && !dog.IsDangerous && (
+                <span className="px-3 py-1 bg-orange-100 text-orange-800 text-sm font-medium rounded-full">
                   ⚠ Nuisance Dog
+                </span>
+              )}
+              {dog.IsDangerous && (
+                <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+                  ⚠ Dangerous Dog
                 </span>
               )}
             </div>
@@ -81,20 +112,28 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Dog Information */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Dog Information</h4>
-              
+              <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">
+                Dog Information
+              </h4>
+
               <div>
-                <label className="text-sm font-medium text-gray-500">Breed</label>
-                <p className="text-gray-900">{dog.Breed || 'N/A'}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Breed
+                </label>
+                <p className="text-gray-900">{dog.Breed || "N/A"}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-500">Color</label>
-                <p className="text-gray-900">{dog.Color || 'N/A'}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Color
+                </label>
+                <p className="text-gray-900">{dog.Color || "N/A"}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-500">Date of Birth</label>
+                <label className="text-sm font-medium text-gray-500">
+                  Date of Birth
+                </label>
                 <p className="text-gray-900">{formatDate(dog.DateOfBirth)}</p>
               </div>
 
@@ -104,33 +143,63 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-500">Tax Roll Number</label>
-                <p className="text-gray-900 font-medium">{dog.Roll || 'N/A'}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Tax Roll Number
+                </label>
+                <p className="text-gray-900 font-medium">{dog.Roll || "N/A"}</p>
               </div>
             </div>
 
             {/* Owner Information */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Owner Information</h4>
-              
+              <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">
+                Owner Information
+              </h4>
+
               <div>
-                <label className="text-sm font-medium text-gray-500">Owner Name</label>
+                <label className="text-sm font-medium text-gray-500">
+                  Owner Name
+                </label>
                 <p className="text-gray-900">
-                  {dog.OwnerFirstName} {dog.OwnerLastName}
+                  {dog.FirstName} {dog.LastName}
                 </p>
               </div>
 
-              {dog.OwnerEmail && (
+              {dog.Email && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-gray-900">{dog.OwnerEmail}</p>
+                  <label className="text-sm font-medium text-gray-500">
+                    Email
+                  </label>
+                  <p className="text-gray-900">{dog.Email}</p>
                 </div>
               )}
 
-              {dog.OwnerPhone && (
+              {dog.Phone1 && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Phone</label>
-                  <p className="text-gray-900">{dog.OwnerPhone}</p>
+                  <label className="text-sm font-medium text-gray-500">
+                    Phone Number
+                  </label>
+                  <p className="text-gray-900">{dog.Phone1}</p>
+                </div>
+              )}
+
+              {dog.Phone2 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Alternative Phone Number
+                  </label>
+                  <p className="text-gray-900">{dog.Phone2}</p>
+                </div>
+              )}
+
+              {dog.Address && dog.City && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Address
+                  </label>
+                  <p className="text-gray-900">
+                    {dog.Address}, {dog.City}, {dog.Province} {dog.PostalCode}
+                  </p>
                 </div>
               )}
             </div>
@@ -145,13 +214,6 @@ const DogDetailsModal: React.FC<DogDetailsModalProps> = ({
           >
             Close
           </button>
-          
-          {/* <button
-            onClick={onDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
-          >
-            Delete Dog
-          </button> */}
         </div>
       </div>
     </div>

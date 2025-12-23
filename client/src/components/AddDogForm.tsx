@@ -1,28 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { dogAPI, ownerAPI } from '../services/api';
-import { Owner, AddDogFormProps } from '../types';
+import React, { useState, useEffect } from "react";
+import { dogAPI, ownerAPI } from "../services/api";
+import { Owner, AddDogFormProps } from "../types";
 
-
-
-const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) => {
+const AddDogForm: React.FC<AddDogFormProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
   const [owners, setOwners] = useState<Owner[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
-    ownerId: '',
-    ownerName: '',
-    dogName: '',
-    roll: '',
-    breed: '',
-    color: '',
-    dateOfBirth: '',
-    gender: 'Male',
+    ownerId: "",
+    ownerName: "",
+    dogName: "",
+    roll: "",
+    breed: "",
+    color: "",
+    dateOfBirth: "",
+    gender: "Male",
     isSpayedNeutered: false,
     isNuisance: false,
+    isServiceDog: false, // NEW
+    isDangerous: false, // NEW
   });
 
   useEffect(() => {
@@ -36,11 +40,11 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
       const data = await ownerAPI.getAll();
       setOwners(data);
     } catch (err) {
-      console.error('Error loading owners:', err);
+      console.error("Error loading owners:", err);
     }
   };
 
-  const filteredOwners = owners.filter(owner => {
+  const filteredOwners = owners.filter((owner) => {
     const search = searchTerm.toLowerCase();
     return (
       owner.FirstName?.toLowerCase().includes(search) ||
@@ -50,24 +54,41 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
   });
 
   const handleOwnerSelect = (owner: Owner) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       ownerId: owner.OwnerID.toString(),
       ownerName: `${owner.FirstName} ${owner.LastName}`,
     }));
-    setSearchTerm('');
+    setSearchTerm("");
     setShowOwnerDropdown(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
-    
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+    const checked = (e.target as HTMLInputElement).checked;
+
+    if (name === "roll" && type === "text") {
+      // Only allow numbers for roll
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({ ...prev, roll: numericValue }));
+      return;
     }
+
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      // If unchecking isNuisance, also uncheck isDangerous
+      if (name === "isNuisance" && !checked) {
+        newData.isDangerous = false;
+      }
+
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,10 +100,10 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
     try {
       // Validate
       if (!formData.ownerId) {
-        throw new Error('Please select an owner');
+        throw new Error("Please select an owner");
       }
       if (!formData.dogName.trim()) {
-        throw new Error('Dog name is required');
+        throw new Error("Dog name is required");
       }
 
       // Prepare data for API
@@ -96,12 +117,14 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
         gender: formData.gender || null,
         isSpayedNeutered: formData.isSpayedNeutered,
         isNuisance: formData.isNuisance,
+        isServiceDog: formData.isServiceDog, // NEW
+        isDangerous: formData.isDangerous, // NEW
       };
 
       await dogAPI.create(dogData);
-      
+
       setSuccess(true);
-      
+
       // Call success callback
       if (onSuccess) {
         onSuccess();
@@ -112,9 +135,8 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
         onClose();
         resetForm();
       }, 1500);
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register dog');
+      setError(err instanceof Error ? err.message : "Failed to register dog");
     } finally {
       setLoading(false);
     }
@@ -122,18 +144,20 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
 
   const resetForm = () => {
     setFormData({
-      ownerId: '',
-      ownerName: '',
-      dogName: '',
-      breed: '',
-      roll: '',
-      color: '',
-      dateOfBirth: '',
-      gender: 'Male',
+      ownerId: "",
+      ownerName: "",
+      dogName: "",
+      breed: "",
+      roll: "",
+      color: "",
+      dateOfBirth: "",
+      gender: "Male",
       isSpayedNeutered: false,
       isNuisance: false,
+      isServiceDog: false, // NEW
+      isDangerous: false, // NEW
     });
-    setSearchTerm('');
+    setSearchTerm("");
     setError(null);
     setSuccess(false);
   };
@@ -149,16 +173,34 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
         {/* Backdrop */}
-        <div className="fixed inset-0 bg-black opacity-30" onClick={handleClose}></div>
+        <div
+          className="fixed inset-0 bg-black opacity-30"
+          onClick={handleClose}
+        ></div>
 
         {/* Modal */}
         <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 z-50">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Register New Dog</h2>
-            <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <h2 className="text-2xl font-bold text-gray-900">
+              Register New Dog
+            </h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -167,8 +209,16 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <p className="font-medium">Dog registered successfully!</p>
               </div>
@@ -190,13 +240,21 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Owner <span className="text-red-500">*</span>
               </label>
-              
+
               {formData.ownerName ? (
                 <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <span className="font-medium text-blue-900">{formData.ownerName}</span>
+                  <span className="font-medium text-blue-900">
+                    {formData.ownerName}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, ownerId: '', ownerName: '' }))}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ownerId: "",
+                        ownerName: "",
+                      }))
+                    }
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Change
@@ -215,7 +273,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                     onFocus={() => setShowOwnerDropdown(true)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
-                  
+
                   {/* Owner Dropdown */}
                   {showOwnerDropdown && filteredOwners.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -229,7 +287,9 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                           <div className="font-medium text-gray-900">
                             {owner.FirstName} {owner.LastName}
                           </div>
-                          <div className="text-sm text-gray-500">{owner.Email}</div>
+                          <div className="text-sm text-gray-500">
+                            {owner.Email}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -254,7 +314,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
               />
             </div>
 
-           {/* Roll */}
+            {/* Roll */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tax Roll Number <span className="text-red-500">*</span>
@@ -265,13 +325,13 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                 value={formData.roll}
                 onChange={(e) => {
                   //only allow numbers
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  setFormData(prev => ({ ...prev, roll: value}))
+                  const value = e.target.value.replace(/[^0-9]/g, "");
+                  setFormData((prev) => ({ ...prev, roll: value }));
                 }}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 placeholder="Enter Roll number where dog lives"
-                inputMode='numeric'
+                inputMode="numeric"
               />
               <p className="text-xs text-gray-500 mt-1">Numbers only</p>
             </div>
@@ -279,7 +339,9 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
             {/* Breed and Color */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Breed
+                </label>
                 <input
                   type="text"
                   name="breed"
@@ -290,7 +352,9 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Color
+                </label>
                 <input
                   type="text"
                   name="color"
@@ -305,7 +369,9 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
             {/* Date of Birth and Gender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date of Birth
+                </label>
                 <input
                   type="date"
                   name="dateOfBirth"
@@ -315,7 +381,9 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
                 <select
                   name="gender"
                   value={formData.gender}
@@ -338,7 +406,27 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                   onChange={handleChange}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span className="ml-2 text-sm text-gray-700">Spayed/Neutered</span>
+                <span className="ml-2 text-sm text-gray-700">
+                  Spayed/Neutered
+                </span>
+                <label className="ml-2 flex items-center">
+                  <input
+                    type="checkbox"
+                    name="isServiceDog"
+                    checked={formData.isServiceDog}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Service Dog
+                  </span>
+                </label>
+
+                {formData.isServiceDog && (
+                  <p className="ml-6 text-xs text-green-600 font-medium">
+                    ✓ Service dogs are licensed at no charge (lifetime)
+                  </p>
+                )}
               </label>
               <label className="flex items-center">
                 <input
@@ -350,6 +438,32 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
                 />
                 <span className="ml-2 text-sm text-gray-700">Nuisance Dog</span>
               </label>
+              {formData.isNuisance && (
+                <div className="ml-6 mt-2 space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isDangerous"
+                      checked={formData.isDangerous}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">
+                      Dangerous Dog
+                    </span>
+                  </label>
+                  {formData.isDangerous ? (
+                    <p className="ml-6 text-xs text-red-600 font-medium">
+                      ⚠ Dangerous dogs require annual license renewal
+                      ($100/year)
+                    </p>
+                  ) : (
+                    <p className="ml-6 text-xs text-orange-600">
+                      Nuisance (non-dangerous) dogs: $60 lifetime license
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Form Actions */}
@@ -369,21 +483,44 @@ const AddDogForm: React.FC<AddDogFormProps> = ({ isOpen, onClose, onSuccess }) =
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Processing...
                   </>
                 ) : success ? (
                   <>
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Registered
                   </>
                 ) : (
-                  'Register Dog'
+                  "Register Dog"
                 )}
               </button>
             </div>

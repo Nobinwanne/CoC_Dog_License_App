@@ -31,7 +31,6 @@ export interface License {
   Fee: number;
 }
 
-
 export interface Owner {
   OwnerID: number;
   FirstName: string;
@@ -44,7 +43,7 @@ export interface Owner {
   Province: string;
   PostalCode: string;
   dogs?: Dog[];
-  dogCount?: number
+  dogCount?: number;
 }
 
 export interface Dog {
@@ -57,11 +56,18 @@ export interface Dog {
   Gender: string;
   IsSpayedNeutered: boolean;
   IsNuisance: boolean;
+  IsDangerous: boolean;
+  IsServiceDog: boolean;
   OwnerID: number;
-  OwnerFirstName: string;
-  OwnerLastName: string;
-  OwnerEmail: string;
-  OwnerPhone: string;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Phone1: string;
+  Phone2: string;
+  Address: string;
+  City: string;
+  Province: string;
+  PostalCode: string;
   TagNumber: string;
   tags: [];
 }
@@ -78,6 +84,13 @@ export interface RenewKennelFormProps {
   onClose: () => void;
   onSuccess: () => void;
   kennelId: number | null;
+}
+
+export interface FeeCalculation {
+  fee: number;
+  licenseType: "Lifetime" | "Annual" | "Replacement";
+  dogType: string;
+  description: string;
 }
 
 export interface KennelDetails {
@@ -108,7 +121,6 @@ export interface DogDetailsModalProps {
   dog: Dog | null;
 }
 
-
 export interface EditDogFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -127,7 +139,6 @@ export interface DogDetailsModalProps {
   onClose: () => void;
   // dog: License | null;
 }
-
 
 export interface OwnerDetailsModalProps {
   isOpen: boolean;
@@ -193,4 +204,3 @@ export interface Kennel {
   Phone: string;
   CreatedAt: string;
 }
-
