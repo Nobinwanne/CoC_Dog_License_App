@@ -17,73 +17,125 @@ router.get('/', async (req, res) => {
 // Get owner by ID
 router.get('/:id', async (req, res) => {
   try {
-    const result = await req.db.request()
+    // Get owner info
+    const ownerResult = await req.db.request()
       .input('id', sql.Int, req.params.id)
       .query('SELECT * FROM Owners WHERE OwnerID = @id');
     
-    if (result.recordset.length === 0) {
+    if (ownerResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Owner not found' });
     }
-    res.json(result.recordset[0]);
+
+    const owner = ownerResult.recordset[0];
+
+    // Get all dogs for this owner - SIMPLE QUERY, no joins needed
+    const dogsResult = await req.db.request()
+      .input('ownerId', sql.Int, req.params.id)
+      .query(`
+        SELECT 
+          DogID,
+          DogName,
+          Breed,
+          Color,
+          Gender,
+          DateOfBirth,
+          IsSpayedNeutered,
+          IsNuisance
+        FROM Dogs
+        WHERE OwnerID = @ownerId
+      `);
+
+    // Add dogs array to owner object
+    owner.dogs = dogsResult.recordset;
+    owner.dogCount = dogsResult.recordset.length;
+
+    console.log(`Owner ${owner.OwnerID} has ${owner.dogCount} dogs`); // Debug log
+
+    res.json(owner);
   } catch (err) {
+    console.error('Error fetching owner:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // Get owner with their dogs
 router.get('/:id/dogs', async (req, res) => {
   try {
-    const result = await req.db.request()
+    // First, get the owner info
+    const ownerResult = await req.db.request()
+      .input('id', sql.Int, req.params.id)
+      .query('SELECT * FROM Owners WHERE OwnerID = @id');
+    
+    if (ownerResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+
+    const owner = ownerResult.recordset[0];
+
+    // Get dogs with all their tags
+    const dogsResult = await req.db.request()
       .input('id', sql.Int, req.params.id)
       .query(`
         SELECT 
-          o.*,
           d.DogID,
           d.DogName,
           d.Breed,
+          d.Roll,
           d.Color,
           d.DateOfBirth,
           d.Gender,
           d.IsSpayedNeutered,
-          d.MicrochipNumber
-        FROM Owners o
-        LEFT JOIN Dogs d ON o.OwnerID = d.OwnerID
-        WHERE o.OwnerID = @id
+          d.IsNuisance,
+          t.TagNumber
+        FROM Dogs d
+        LEFT JOIN Licenses l ON d.DogID = l.DogID AND l.Status = 'Active'
+        LEFT JOIN Tags t ON l.TagID = t.TagID
+        WHERE d.OwnerID = @id
+        ORDER BY d.DogName, t.TagNumber
       `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
-    }
 
-    // Format response to group dogs under owner
-    const owner = {
-      OwnerID: result.recordset[0].OwnerID,
-      FirstName: result.recordset[0].FirstName,
-      LastName: result.recordset[0].LastName,
-      Email: result.recordset[0].Email,
-      Phone: result.recordset[0].Phone,
-      Address: result.recordset[0].Address,
-      City: result.recordset[0].City,
-      State: result.recordset[0].State,
-      ZipCode: result.recordset[0].ZipCode,
-      CreatedAt: result.recordset[0].CreatedAt,
-      UpdatedAt: result.recordset[0].UpdatedAt,
-      dogs: result.recordset
-        .filter(row => row.DogID !== null)
-        .map(row => ({
+    // Group tags by dog (in case a dog has multiple tags)
+    const dogsMap = new Map();
+    
+    dogsResult.recordset.forEach(row => {
+      if (!dogsMap.has(row.DogID)) {
+        dogsMap.set(row.DogID, {
           DogID: row.DogID,
           DogName: row.DogName,
+          Roll: row.Roll,
           Breed: row.Breed,
           Color: row.Color,
           DateOfBirth: row.DateOfBirth,
           Gender: row.Gender,
           IsSpayedNeutered: row.IsSpayedNeutered,
-          MicrochipNumber: row.MicrochipNumber
-        }))
+          IsNuisance: row.IsNuisance,
+          TagNumber: row.TagNumber, // First/primary tag
+          tags: [] // Array of all tags
+        });
+      }
+      
+      // Add tag to the tags array if it exists
+      if (row.TagNumber) {
+        const dog = dogsMap.get(row.DogID);
+        if (!dog.tags.includes(row.TagNumber)) {
+          dog.tags.push(row.TagNumber);
+        }
+      }
+    });
+
+    // Convert map to array
+    const dogs = Array.from(dogsMap.values());
+
+    // Format response
+    const response = {
+      ...owner,
+      dogs: dogs
     };
 
-    res.json(owner);
+    res.json(response);
   } catch (err) {
+    console.error('Error in GET /:id/dogs:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -115,11 +167,12 @@ router.post('/', async (req, res) => {
       firstName,
       lastName,
       email,
-      phone,
+      phone1,
+      phone2,
       address,
       city,
-      state,
-      zipCode
+      province,
+      postalCode
     } = req.body;
 
     // Validate required fields
@@ -144,16 +197,17 @@ router.post('/', async (req, res) => {
       .input('firstName', sql.NVarChar, firstName)
       .input('lastName', sql.NVarChar, lastName)
       .input('email', sql.NVarChar, email)
-      .input('phone', sql.NVarChar, phone || null)
+      .input('phone1', sql.NVarChar, phone1 || null)
+      .input('phone2', sql.NVarChar, phone2 || null)
       .input('address', sql.NVarChar, address || null)
       .input('city', sql.NVarChar, city || null)
-      .input('state', sql.NVarChar, state || null)
-      .input('zipCode', sql.NVarChar, zipCode || null)
+      .input('province', sql.NVarChar, province || null)
+      .input('postalCode', sql.NVarChar, postalCode || null)
       .query(`
         INSERT INTO Owners 
-        (FirstName, LastName, Email, Phone, Address, City, State, ZipCode)
+        (FirstName, LastName, Email, Phone1, Phone2, Address, City, Province, PostalCode)
         OUTPUT INSERTED.OwnerID, INSERTED.FirstName, INSERTED.LastName, INSERTED.Email
-        VALUES (@firstName, @lastName, @email, @phone, @address, @city, @state, @zipCode)
+        VALUES (@firstName, @lastName, @email, @phone1, @phone2, @address, @city, @province, @postalCode)
       `);
 
     res.status(201).json({
@@ -173,11 +227,12 @@ router.put('/:id', async (req, res) => {
       firstName,
       lastName,
       email,
-      phone,
+      phone1,
+      phone2,
       address,
       city,
-      state,
-      zipCode
+      province,
+      postalCode
     } = req.body;
 
     // Check if owner exists
@@ -208,21 +263,23 @@ router.put('/:id', async (req, res) => {
       .input('firstName', sql.NVarChar, firstName)
       .input('lastName', sql.NVarChar, lastName)
       .input('email', sql.NVarChar, email)
-      .input('phone', sql.NVarChar, phone)
+      .input('phone1', sql.NVarChar, phone1)
+      .input('phone2', sql.NVarChar, phone2)
       .input('address', sql.NVarChar, address)
       .input('city', sql.NVarChar, city)
-      .input('state', sql.NVarChar, state)
-      .input('zipCode', sql.NVarChar, zipCode)
+      .input('province', sql.NVarChar, province)
+      .input('postalCode', sql.NVarChar, postalCode)
       .query(`
         UPDATE Owners 
         SET FirstName = @firstName,
             LastName = @lastName,
             Email = @email,
-            Phone = @phone,
+            Phone1 = @phone1,
+            Phone2 = @phone2,
             Address = @address,
             City = @city,
-            State = @state,
-            ZipCode = @zipCode,
+            Province = @province,
+            PostalCode = @postalCode,
             UpdatedAt = GETDATE()
         WHERE OwnerID = @id
       `);

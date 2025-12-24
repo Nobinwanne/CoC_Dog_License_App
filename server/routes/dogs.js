@@ -1,13 +1,23 @@
-// server/routes/dogs.js
 const express = require('express');
 const router = express.Router();
 const sql = require('mssql');
 
-// Get all owners
+// Get all dogs
 router.get('/', async (req, res) => {
   try {
     const result = await req.db.request()
-      .query('SELECT * FROM Dogs ORDER BY DogName, Breed');
+      .query(`
+        SELECT 
+          d.*,
+          o.FirstName,
+          o.LastName,
+          o.Email,
+          o.Phone1,
+          o.Phone2
+        FROM Dogs d
+        INNER JOIN Owners o ON d.OwnerID = o.OwnerID
+        ORDER BY d.DogName
+      `);
     res.json(result.recordset);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -19,88 +29,42 @@ router.get('/:id', async (req, res) => {
   try {
     const result = await req.db.request()
       .input('id', sql.Int, req.params.id)
-      .query('SELECT * FROM Dogs WHERE DogID = @id');
+      .query(`
+        SELECT 
+          d.*,
+          o.FirstName,
+          o.LastName,
+          o.Email,
+          o.Phone1,
+          o.Phone2,
+          o.Address,
+          o.City,
+          o.Province,
+          o.PostalCode
+        FROM Dogs d
+        INNER JOIN Owners o ON d.OwnerID = o.OwnerID
+        WHERE d.DogID = @id
+      `);
     
     if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
+      return res.status(404).json({ error: 'Dog not found' });
     }
+    
     res.json(result.recordset[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get dogs with their owners
-router.get('/:id/dogs', async (req, res) => {
+// Get dogs by owner ID
+router.get('/owner/:ownerId', async (req, res) => {
   try {
     const result = await req.db.request()
-      .input('id', sql.Int, req.params.id)
+      .input('ownerId', sql.Int, req.params.ownerId)
       .query(`
-        SELECT 
-          o.*,
-          d.DogID,
-          d.DogName,
-          d.Breed,
-          d.Color,
-          d.DateOfBirth,
-          d.Gender,
-          d.IsSpayedNeutered,
-          d.MicrochipNumber
-        FROM Owners o
-        LEFT JOIN Dogs d ON o.OwnerID = d.OwnerID
-        WHERE o.OwnerID = @id
-      `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
-    }
-
-    // Format response to group dogs under owner
-    const owner = {
-      OwnerID: result.recordset[0].OwnerID,
-      FirstName: result.recordset[0].FirstName,
-      LastName: result.recordset[0].LastName,
-      Email: result.recordset[0].Email,
-      Phone: result.recordset[0].Phone,
-      Address: result.recordset[0].Address,
-      City: result.recordset[0].City,
-      State: result.recordset[0].State,
-      ZipCode: result.recordset[0].ZipCode,
-      CreatedAt: result.recordset[0].CreatedAt,
-      UpdatedAt: result.recordset[0].UpdatedAt,
-      dogs: result.recordset
-        .filter(row => row.DogID !== null)
-        .map(row => ({
-          DogID: row.DogID,
-          DogName: row.DogName,
-          Breed: row.Breed,
-          Color: row.Color,
-          DateOfBirth: row.DateOfBirth,
-          Gender: row.Gender,
-          IsSpayedNeutered: row.IsSpayedNeutered,
-          MicrochipNumber: row.MicrochipNumber
-        }))
-    };
-
-    res.json(owner);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Search owners by name or email
-router.get('/search/:term', async (req, res) => {
-  try {
-    const searchTerm = `%${req.params.term}%`;
-    const result = await req.db.request()
-      .input('term', sql.NVarChar, searchTerm)
-      .query(`
-        SELECT * FROM Owners 
-        WHERE FirstName LIKE @term 
-        OR LastName LIKE @term 
-        OR Email LIKE @term
-        OR Phone LIKE @term
-        ORDER BY LastName, FirstName
+        SELECT * FROM Dogs 
+        WHERE OwnerID = @ownerId
+        ORDER BY DogName
       `);
     res.json(result.recordset);
   } catch (err) {
@@ -108,193 +72,159 @@ router.get('/search/:term', async (req, res) => {
   }
 });
 
-// Create new owner
+// Create new dog
 router.post('/', async (req, res) => {
   try {
     const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      address,
-      city,
-      state,
-      zipCode
+      ownerId,
+      dogName,
+      roll,
+      breed,
+      color,
+      dateOfBirth,
+      gender,
+      isSpayedNeutered,
+      isNuisance
     } = req.body;
+
+    console.log('Received dog creation request:', req.body);
 
     // Validate required fields
-    if (!firstName || !lastName || !email) {
+    if (!ownerId || !dogName) {
       return res.status(400).json({ 
-        error: 'First name, last name, and email are required' 
+        error: 'Owner ID and dog name are required' 
       });
     }
-
-    // Check if email already exists
-    const checkEmail = await req.db.request()
-      .input('email', sql.NVarChar, email)
-      .query('SELECT OwnerID FROM Owners WHERE Email = @email');
-
-    if (checkEmail.recordset.length > 0) {
-      return res.status(409).json({ 
-        error: 'An owner with this email already exists' 
-      });
-    }
-
-    const result = await req.db.request()
-      .input('firstName', sql.NVarChar, firstName)
-      .input('lastName', sql.NVarChar, lastName)
-      .input('email', sql.NVarChar, email)
-      .input('phone', sql.NVarChar, phone || null)
-      .input('address', sql.NVarChar, address || null)
-      .input('city', sql.NVarChar, city || null)
-      .input('state', sql.NVarChar, state || null)
-      .input('zipCode', sql.NVarChar, zipCode || null)
-      .query(`
-        INSERT INTO Owners 
-        (FirstName, LastName, Email, Phone, Address, City, State, ZipCode)
-        OUTPUT INSERTED.OwnerID, INSERTED.FirstName, INSERTED.LastName, INSERTED.Email
-        VALUES (@firstName, @lastName, @email, @phone, @address, @city, @state, @zipCode)
-      `);
-
-    res.status(201).json({
-      ownerId: result.recordset[0].OwnerID,
-      message: 'Owner created successfully',
-      owner: result.recordset[0]
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update owner
-router.put('/:id', async (req, res) => {
-  try {
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      address,
-      city,
-      state,
-      zipCode
-    } = req.body;
 
     // Check if owner exists
     const checkOwner = await req.db.request()
-      .input('id', sql.Int, req.params.id)
-      .query('SELECT OwnerID FROM Owners WHERE OwnerID = @id');
+      .input('ownerId', sql.Int, ownerId)
+      .query('SELECT OwnerID FROM Owners WHERE OwnerID = @ownerId');
 
     if (checkOwner.recordset.length === 0) {
       return res.status(404).json({ error: 'Owner not found' });
     }
 
-    // Check if email is being changed to one that already exists
-    if (email) {
-      const checkEmail = await req.db.request()
-        .input('email', sql.NVarChar, email)
-        .input('id', sql.Int, req.params.id)
-        .query('SELECT OwnerID FROM Owners WHERE Email = @email AND OwnerID != @id');
+    const result = await req.db.request()
+      .input('ownerId', sql.Int, ownerId)
+      .input('dogName', sql.NVarChar, dogName)
+      .input('roll', sql.NVarChar, roll || null)
+      .input('breed', sql.NVarChar, breed || null)
+      .input('color', sql.NVarChar, color || null)
+      .input('dateOfBirth', sql.Date, dateOfBirth || null)
+      .input('gender', sql.NVarChar, gender || null)
+      .input('isSpayedNeutered', sql.Bit, isSpayedNeutered || 0)
+      .input('isNuisance', sql.Bit, isNuisance || 0)
+      .query(`
+        INSERT INTO Dogs 
+        (OwnerID, DogName, Roll, Breed, Color, DateOfBirth, Gender, IsSpayedNeutered, IsNuisance)
+        OUTPUT INSERTED.DogID, INSERTED.DogName, INSERTED.Roll
+        VALUES (@ownerId, @dogName, @roll, @breed, @color, @dateOfBirth, @gender, @isSpayedNeutered, @isNuisance)
+      `);
 
-      if (checkEmail.recordset.length > 0) {
-        return res.status(409).json({ 
-          error: 'An owner with this email already exists' 
-        });
-      }
+    console.log('Dog created:', result.recordset[0]);
+
+    res.status(201).json({
+      dogId: result.recordset[0].DogID,
+      message: 'Dog registered successfully',
+      dog: result.recordset[0]
+    });
+  } catch (err) {
+    console.error('Error creating dog:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update dog
+router.put('/:id', async (req, res) => {
+  try {
+    const {
+      dogName,
+      roll,
+      breed,
+      color,
+      dateOfBirth,
+      gender,
+      isSpayedNeutered,
+      isNuisance
+    } = req.body;
+
+    console.log('Received dog update request:', req.params.id, req.body);
+
+    // Check if dog exists
+    const checkDog = await req.db.request()
+      .input('id', sql.Int, req.params.id)
+      .query('SELECT DogID FROM Dogs WHERE DogID = @id');
+
+    if (checkDog.recordset.length === 0) {
+      return res.status(404).json({ error: 'Dog not found' });
     }
 
     await req.db.request()
       .input('id', sql.Int, req.params.id)
-      .input('firstName', sql.NVarChar, firstName)
-      .input('lastName', sql.NVarChar, lastName)
-      .input('email', sql.NVarChar, email)
-      .input('phone', sql.NVarChar, phone)
-      .input('address', sql.NVarChar, address)
-      .input('city', sql.NVarChar, city)
-      .input('state', sql.NVarChar, state)
-      .input('zipCode', sql.NVarChar, zipCode)
+      .input('dogName', sql.NVarChar, dogName)
+      .input('roll', sql.NVarChar, roll)
+      .input('breed', sql.NVarChar, breed)
+      .input('color', sql.NVarChar, color)
+      .input('dateOfBirth', sql.Date, dateOfBirth)
+      .input('gender', sql.NVarChar, gender)
+      .input('isSpayedNeutered', sql.Bit, isSpayedNeutered)
+      .input('isNuisance', sql.Bit, isNuisance)
       .query(`
-        UPDATE Owners 
-        SET FirstName = @firstName,
-            LastName = @lastName,
-            Email = @email,
-            Phone = @phone,
-            Address = @address,
-            City = @city,
-            State = @state,
-            ZipCode = @zipCode,
+        UPDATE Dogs 
+        SET DogName = @dogName,
+            Roll = @roll,
+            Breed = @breed,
+            Color = @color,
+            DateOfBirth = @dateOfBirth,
+            Gender = @gender,
+            IsSpayedNeutered = @isSpayedNeutered,
+            IsNuisance = @isNuisance,
             UpdatedAt = GETDATE()
-        WHERE OwnerID = @id
+        WHERE DogID = @id
       `);
 
-    res.json({ message: 'Owner updated successfully' });
+    console.log('Dog updated successfully');
+
+    res.json({ message: 'Dog updated successfully' });
   } catch (err) {
+    console.error('Error updating dog:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete owner (will cascade delete dogs and licenses)
+// Delete dog
 router.delete('/:id', async (req, res) => {
   try {
-    // Check if owner exists
-    const checkOwner = await req.db.request()
+    // Check if dog exists
+    const checkDog = await req.db.request()
       .input('id', sql.Int, req.params.id)
-      .query('SELECT OwnerID FROM Owners WHERE OwnerID = @id');
+      .query('SELECT DogID FROM Dogs WHERE DogID = @id');
 
-    if (checkOwner.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
+    if (checkDog.recordset.length === 0) {
+      return res.status(404).json({ error: 'Dog not found' });
     }
 
-    // Check if owner has active licenses
+    // Check if dog has active licenses
     const activeLicenses = await req.db.request()
       .input('id', sql.Int, req.params.id)
       .query(`
         SELECT COUNT(*) as count 
-        FROM Licenses l
-        INNER JOIN Dogs d ON l.DogID = d.DogID
-        WHERE d.OwnerID = @id AND l.Status = 'Active'
+        FROM Licenses 
+        WHERE DogID = @id AND Status = 'Active'
       `);
 
     if (activeLicenses.recordset[0].count > 0) {
       return res.status(400).json({ 
-        error: 'Cannot delete owner with active licenses. Please expire or revoke licenses first.' 
+        error: 'Cannot delete dog with active licenses. Please expire or revoke licenses first.' 
       });
     }
 
     await req.db.request()
       .input('id', sql.Int, req.params.id)
-      .query('DELETE FROM Owners WHERE OwnerID = @id');
+      .query('DELETE FROM Dogs WHERE DogID = @id');
     
-    res.json({ message: 'Owner deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get owner statistics
-router.get('/:id/statistics', async (req, res) => {
-  try {
-    const result = await req.db.request()
-      .input('id', sql.Int, req.params.id)
-      .query(`
-        SELECT 
-          COUNT(DISTINCT d.DogID) as TotalDogs,
-          COUNT(DISTINCT l.LicenseID) as TotalLicenses,
-          SUM(CASE WHEN l.Status = 'Active' THEN 1 ELSE 0 END) as ActiveLicenses,
-          SUM(CASE WHEN l.Status = 'Expired' THEN 1 ELSE 0 END) as ExpiredLicenses,
-          SUM(l.Fee) as TotalFeespaid
-        FROM Owners o
-        LEFT JOIN Dogs d ON o.OwnerID = d.OwnerID
-        LEFT JOIN Licenses l ON d.DogID = l.DogID
-        WHERE o.OwnerID = @id
-        GROUP BY o.OwnerID
-      `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'Owner not found' });
-    }
-
-    res.json(result.recordset[0]);
+    res.json({ message: 'Dog deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
